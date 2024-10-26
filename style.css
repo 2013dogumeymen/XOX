@@ -1,0 +1,64 @@
+body {
+    font-family: 'Courier New', Courier, monospace;
+    text-align: center;
+    background-color: #f9f5ec; /* Varsayılan arka plan rengi */
+    margin: 0;
+    transition: background-color 0.5s ease; /* Yumuşak geçiş için transition eklendi */
+}
+
+.game-board {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    gap: 5px;
+    margin: 20px auto; /* Oyun tahtasını yatay olarak ortalamak için */
+    position: relative;
+    width: max-content; /* Genişliği içeriğe göre ayarlamak için */
+}
+
+.cell {
+    width: 100px;
+    height: 100px;
+    background-color: #fff; /* Hücrelerin varsayılan rengi beyaz */
+    font-size: 72px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border: 1px solid #d3d3d3;
+    transition: background-color 0.3s; /* Hücreler için yumuşak geçiş */
+}
+
+.cell.X {
+    background-color: #add8e6; /* X için açık mavi */
+    color: #000;
+}
+
+.cell.O {
+    background-color: #90ee90; /* O için açık yeşil */
+    color: #000;
+}
+
+.cell:hover {
+    background-color: #f0f0f0;
+}
+
+#winnerLine {
+    position: absolute;
+    width: 5px;
+    height: 0;
+    background-color: red;
+    transform-origin: top left;
+    transition: all 0.5s ease;
+}
+
+#restartButton,
+#changeBackgroundButton {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+#gameMessage {
+    font-size: 24px;
+    margin-top: 20px;
+}
