@@ -1,95 +1,114 @@
-const game = document.getElementById('game');
 const cells = document.querySelectorAll('.cell');
-const statusText = document.getElementById('status');
-const resetButton = document.getElementById('reset');
-const changeBgButton = document.getElementById('change-bg');
-const bgUpload = document.getElementById('bg-upload');
-const currentPlayerText = document.getElementById('current-player');
-const scoreX = document.getElementById('score-x');
-const scoreO = document.getElementById('score-o');
-
+const restartButton = document.getElementById('restartButton');
+const changeBackgroundButton = document.getElementById('changeBackgroundButton');
+const gameMessage = document.getElementById('gameMessage');
+const winnerLine = document.getElementById('winnerLine');
 let currentPlayer = 'X';
-let gameState = Array(9).fill(null);
-let scores = { X: 0, O: 0 };
+let gameActive = true;
+let boardState = ['', '', '', '', '', '', '', '', ''];
+
+const backgroundColors = ['#f9f5ec', '#e6f7ff', '#fff0f5', '#f0fff0']; // Arka plan renkleri dizisi
+let currentBackgroundIndex = 0;
 
 const winningConditions = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6]
+    [0, 1, 2], // Üst sıra
+    [3, 4, 5], // Orta sıra
+    [6, 7, 8], // Alt sıra
+    [0, 3, 6], // Sol sütun
+    [1, 4, 7], // Orta sütun
+    [2, 5, 8], // Sağ sütun
+    [0, 4, 8], // Sol üstten sağ alta çapraz
+    [2, 4, 6]  // Sağ üstten sol alta çapraz
 ];
 
-const checkWin = () => {
-    for (let condition of winningConditions) {
+function handleCellClick(event) {
+    const clickedCell = event.target;
+    const cellIndex = clickedCell.getAttribute('data-index');
+
+    if (boardState[cellIndex] !== '' || !gameActive) {
+        return;
+    }
+
+    boardState[cellIndex] = currentPlayer;
+    clickedCell.textContent = currentPlayer;
+    clickedCell.classList.add(currentPlayer); // Renk değiştirme için sınıf ekleme
+
+    checkResult();
+    if (gameActive) {
+        switchPlayer();
+    }
+}
+
+function checkResult() {
+    let roundWon = false;
+
+    for (let i = 0; i < winningConditions.length; i++) {
+        const condition = winningConditions[i];
         const [a, b, c] = condition;
-        if (gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
-            return true;
+        if (
+            boardState[a] &&
+            boardState[a] === boardState[b] &&
+            boardState[a] === boardState[c]
+        ) {
+            roundWon = true;
+            drawWinnerLine(condition);
+            break;
         }
     }
-    return false;
-};
 
-const checkDraw = () => {
-    return gameState.every(cell => cell !== null);
-};
-
-const handleClick = (event) => {
-    const index = event.target.dataset.index;
-
-    if (gameState[index] || checkWin()) {
-        return;
+    if (roundWon) {
+        gameMessage.textContent = `Oyuncu ${currentPlayer} kazandı!`;
+        gameActive = false;
+    } else if (!boardState.includes('')) {
+        gameMessage.textContent = 'Oyun berabere!';
+        gameActive = false;
     }
+}
 
-    gameState[index] = currentPlayer;
-    event.target.textContent = currentPlayer;
-
-    if (checkWin()) {
-        statusText.textContent = `${currentPlayer} kazandı!`;
-        scores[currentPlayer]++;
-        updateScores();
-        return;
-    }
-
-    if (checkDraw()) {
-        statusText.textContent = 'Berabere!';
-        return;
-    }
-
+function switchPlayer() {
     currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-    currentPlayerText.textContent = `Sıradaki: ${currentPlayer}`;
-};
+}
 
-const resetGame = () => {
-    gameState.fill(null);
-    cells.forEach(cell => (cell.textContent = ''));
+function restartGame() {
     currentPlayer = 'X';
-    statusText.textContent = `Sıradaki: ${currentPlayer}`;
-    currentPlayerText.textContent = `Sıradaki: ${currentPlayer}`;
-};
+    gameActive = true;
+    boardState = ['', '', '', '', '', '', '', '', ''];
+    cells.forEach(cell => {
+        cell.textContent = '';
+        cell.classList.remove('X', 'O'); // Renk sınıflarını kaldır
+    });
+    gameMessage.textContent = '';
+    winnerLine.style.width = 0;
+    winnerLine.style.height = 0;
+}
 
-const updateScores = () => {
-    scoreX.textContent = scores.X;
-    scoreO.textContent = scores.O;
-};
+function drawWinnerLine(winningCondition) {
+    const firstCell = cells[winningCondition[0]];
+    const lastCell = cells[winningCondition[2]];
 
-const changeBackground = (event) => {
-    const file = event.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        document.body.style.backgroundImage = `url(${e.target.result})`;
-    };
-    if (file) {
-        reader.readAsDataURL(file);
-    }
-};
+    const firstCellRect = firstCell.getBoundingClientRect();
+    const lastCellRect = lastCell.getBoundingClientRect();
+    const boardRect = document.querySelector('.game-board').getBoundingClientRect();
 
-cells.forEach(cell => cell.addEventListener('click', handleClick));
-resetButton.addEventListener('click', resetGame);
-bgUpload.addEventListener('change', changeBackground);
+    const x1 = firstCellRect.left + firstCellRect.width / 2 - boardRect.left;
+    const y1 = firstCellRect.top + firstCellRect.height / 2 - boardRect.top;
+    const x2 = lastCellRect.left + lastCellRect.width / 2 - boardRect.left;
+    const y2 = lastCellRect.top + lastCellRect.height / 2 - boardRect.top;
 
-statusText.textContent = `Sıradaki: ${currentPlayer}`;
-currentPlayerText.textContent = `Sıradaki: ${currentPlayer}`;
+    const length = Math.hypot(x2 - x1, y2 - y1);
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+
+    winnerLine.style.width = `${length}px`;
+    winnerLine.style.height = '5px';
+    winnerLine.style.transform = `translate(${x1}px, ${y1}px) rotate(${angle}rad)`;
+    winnerLine.style.backgroundColor = 'red';
+}
+
+function changeBackground() {
+    currentBackgroundIndex = (currentBackgroundIndex + 1) % backgroundColors.length;
+    document.body.style.backgroundColor = backgroundColors[currentBackgroundIndex];
+}
+
+cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+restartButton.addEventListener('click', restartGame);
+changeBackgroundButton.addEventListener('click', changeBackground);
